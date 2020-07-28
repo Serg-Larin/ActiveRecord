@@ -6,7 +6,7 @@ abstract class ActiveRecordEntity
 {
     
     protected $id;
-
+    public static $tableName;
     
     public function getId(): int
     {
@@ -16,11 +16,34 @@ abstract class ActiveRecordEntity
     public function getById(int $id): ?self
     {
         $db = Db::getInstance();
+
         $entities = $db->query(
             'SELECT * FROM `' . static::getTableName() . '` WHERE id=:id;',
             [':id' => $id],
             static::class
         );
+        return $entities ? $entities[0] : null;
+    }
+
+    public function delete(int $id) : void
+    {
+        $db = Db::getInstance();
+        $db->query(
+            'DELETE FROM `' . static::getTableName() . '` WHERE id=:id;',
+            [':id' => $id]
+        );
+    }
+
+    public static function setTableName($tableName){
+        static::$tableName = $tableName;
+    }
+    public function getByColumnName($columnName,$value)
+    {
+        $db = Db::getInstance();
+        $entities = $db->query(
+            'SELECT * FROM `' . static::getTableName() . "` WHERE $columnName=:$columnName;",
+            [":$columnName" => $value],
+            static::class );
         return $entities ? $entities[0] : null;
     }
 
