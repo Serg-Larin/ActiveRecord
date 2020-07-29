@@ -12,6 +12,62 @@ abstract class ActiveRecordEntity
     {
         return $this->id;
     }
+    protected function belongsTo($class,$thisColumn='',$thatColumn='',$table=''){
+        $db = Db::getInstance();
+        $thisColumn = $thatColumn?$thatColumn:$this->underscoreToCamelCase(strtolower($class).'_id');
+        $thatColumn = $thatColumn?$this->underscoreToCamelCase($thisColumn):'id';
+        $table = $table?$table:$class::getTableName();
+
+        $entities = $db->query(
+            "SELECT * FROM " . $table . " WHERE $thatColumn=:$thatColumn;",
+            [':'.$thatColumn => $this->$thisColumn],
+            $class
+        );
+        return $entities ? $entities[0] : null;
+    }
+    protected function hasOne($class,$thatColumn='',$thisColumn='',$table=''){
+        $db = Db::getInstance();
+        $table = $table?$table:$class::getTableName();
+        $thisColumn = $thisColumn?$this->underscoreToCamelCase($thisColumn):'id';
+        $thatColumn = $thatColumn?$thatColumn:strtolower(static::class).'_id';
+        $entities = $db->query(
+            "SELECT * FROM " . $table . " WHERE $thatColumn=:$thatColumn;",
+            [':'.$thatColumn => $this->$thisColumn],
+            $class
+        );
+        return $entities ? $entities[0] : null;
+    }
+    protected function hasMany($class,$thatColumn='',$thisColumn='',$table=''){
+        $db = Db::getInstance();
+        $table = $table?$table:$class::getTableName();
+        $thisColumn = $thisColumn?$this->underscoreToCamelCase($thisColumn):'id';
+        $thatColumn = $thatColumn?$thatColumn:strtolower(static::class).'_id';
+        $entities = $db->query(
+            "SELECT * FROM " . $table . " WHERE $thatColumn=:$thatColumn;",
+            [':'.$thatColumn => $this->$thisColumn],
+            $class
+        );
+        return $entities ? $entities : null;
+    }
+    protected function belongsToMany($class,$table='',$firstJoinColumn='',$secondJoinColumn='',$comparisonColumn=''){
+        $db = Db::getInstance();
+        $joinTable = $class::getTableName();
+        if($table==''){
+            if(substr($class,0,1)<substr(get_class($this),0,1)){
+                $table=strtolower($class.'_'.get_class($this));
+            } else  $table = strtolower(get_class($this).'_'.$class);
+        }
+        $firstJoinColumn = $firstJoinColumn?$firstJoinColumn:'id';
+        $secondJoinColumn = $secondJoinColumn?$secondJoinColumn:strtolower($class).'_id';
+        $comparisonColumn = $comparisonColumn?$comparisonColumn:strtolower(get_class($this)).'_id';
+
+        $entities = $db->query(
+            "SELECT * FROM  $joinTable as j JOIN $table as i ON j.$firstJoinColumn = i.$secondJoinColumn WHERE i.$comparisonColumn=:id;",
+            [':id'=>$this->id],
+            $class
+        );
+        return $entities ? $entities : null;
+    }
 
     public function getById(int $id): ?self
     {
@@ -135,5 +191,20 @@ abstract class ActiveRecordEntity
         return $db->query('SELECT * FROM `' . static::getTableName() . '`;', [], static::class);
     }
 
-    abstract protected static function getTableName(): string;
+    public static function qwe(){
+        return self::getTableName();
+    }
+    protected static function getTableName()
+    {
+        $tableName = strtolower(static::class);
+        if(static::$tableName!='') return static::$tableName;
+        if(substr($tableName, -1)!='s')
+        {
+            if(substr($tableName, -1)=='y')
+            {
+                return substr($tableName,0,-1).'ies';
+            }
+            return $tableName.'s';
+        }
+    }
 }

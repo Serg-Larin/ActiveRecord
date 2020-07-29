@@ -4,5 +4,9 @@ function stdOut($data){
     print_r($data);
     echo '</pre>';
 }
-require_once 'Posts.php';
+require_once 'Post.php';
+require_once 'Tag.php';
 
+$obj = Tag::getById(2);
+
+stdOut($obj->posts());
